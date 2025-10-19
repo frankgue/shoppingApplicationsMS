@@ -32,7 +32,7 @@ public class InventoryServiceImpl implements InventoryService {
         return inventoryRepository.findBySkuCode(skuCode).isPresent();
     }
 
-    @Override
+    @Transactional(readOnly = true)
     public List<InventoryResponse> isInStock(List<String> skuCodes) {
         return inventoryRepository.findBySkuCodeIn(skuCodes).stream().map(inventory ->
                 InventoryResponse.builder()

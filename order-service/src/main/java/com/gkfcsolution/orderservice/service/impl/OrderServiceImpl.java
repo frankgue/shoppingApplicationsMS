@@ -42,17 +42,20 @@ public class OrderServiceImpl implements OrderService {
                 .orderLineItems(orderLineItems)
                 .build();
 
-        List<String> skuCodes = order.getOrderLineItems().stream().map(OrderLineItems::getSkuCode).toList();
+        List<String> skuCodes = order.getOrderLineItems().stream()
+                .map(OrderLineItems::getSkuCode)
+                .toList();
 
         // Call Inventory Service, and place order if product is in stock
-        InventoryResponse[] inventoryResponseArray = webClient.get()
+        List<InventoryResponse> inventoryResponseArray = webClient.get()
                 .uri("http://localhost:8082/api/inventory",
-                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes).build())
+                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes.toArray()).build())
                 .retrieve()
-                .bodyToMono(InventoryResponse[].class)
+                .bodyToFlux(InventoryResponse.class)
+                .collectList()
                 .block();
 
-        boolean allProductsInStock = Arrays.stream(inventoryResponseArray).allMatch(InventoryResponse::isInStock);
+        boolean allProductsInStock = inventoryResponseArray.stream().allMatch(InventoryResponse::isInStock);
 
         if (allProductsInStock) {
             log.info("Order Placed Successfully");

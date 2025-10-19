@@ -28,7 +28,7 @@ public class InventoryServiceApplication {
                     .skuCode("Iphone17_red")
                     .quantity(0)
                     .build();
-//            inventoryRepository.saveAll(List.of(inventory, inventory1));
+            inventoryRepository.saveAll(List.of(inventory, inventory1));
         };
     }
 
