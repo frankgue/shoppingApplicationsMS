@@ -1,5 +1,6 @@
 package com.gkfcsolution.inventoryservice.service.impl;
 
+import com.gkfcsolution.inventoryservice.dto.InventoryResponse;
 import com.gkfcsolution.inventoryservice.entity.Inventory;
 import com.gkfcsolution.inventoryservice.repository.InventoryRepository;
 import com.gkfcsolution.inventoryservice.service.InventoryService;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -28,5 +30,15 @@ public class InventoryServiceImpl implements InventoryService {
     @Transactional(readOnly = true)
     public boolean isInStock(String skuCode) {
         return inventoryRepository.findBySkuCode(skuCode).isPresent();
+    }
+
+    @Override
+    public List<InventoryResponse> isInStock(List<String> skuCodes) {
+        return inventoryRepository.findBySkuCodeIn(skuCodes).stream().map(inventory ->
+                InventoryResponse.builder()
+                        .skuCode(inventory.getSkuCode())
+                        .isInStock(inventory.getQuantity() > 0)
+                        .build()
+        ).toList();
     }
 }

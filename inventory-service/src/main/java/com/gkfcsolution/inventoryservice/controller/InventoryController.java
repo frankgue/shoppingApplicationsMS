@@ -1,10 +1,13 @@
 package com.gkfcsolution.inventoryservice.controller;
 
+import com.gkfcsolution.inventoryservice.dto.InventoryResponse;
 import com.gkfcsolution.inventoryservice.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Created on 2025 at 11:59
@@ -24,7 +27,13 @@ public class InventoryController {
 
     @GetMapping(value = "/{sku-code}")
     @ResponseStatus(HttpStatus.OK)
-    public boolean isInStock(@PathVariable(name = "sku-code") String skuCode){
+    public boolean isInStock(@PathVariable(name = "sku-code") String skuCode) {
         return inventoryService.isInStock(skuCode);
+    }
+
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public List<InventoryResponse> isInStock(@RequestParam List<String> skuCodes) {
+        return inventoryService.isInStock(skuCodes);
     }
 }
