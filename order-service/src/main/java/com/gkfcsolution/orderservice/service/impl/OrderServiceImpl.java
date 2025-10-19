@@ -37,6 +37,8 @@ public class OrderServiceImpl implements OrderService {
                 .orderLineItems(orderLineItems)
                 .build();
         log.info("Order Placed Successfully");
+
+        // Call Inventory Service, and place order if product is in stock
         orderRepository.save(order);
     }
 
