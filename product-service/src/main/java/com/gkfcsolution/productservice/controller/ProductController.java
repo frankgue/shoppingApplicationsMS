@@ -20,7 +20,7 @@ import java.util.List;
  * @time 19:31
  */
 @RestController
-@RequestMapping("/api/v1/product")
+@RequestMapping("/api/product")
 @RequiredArgsConstructor
 @Slf4j
 public class ProductController {
