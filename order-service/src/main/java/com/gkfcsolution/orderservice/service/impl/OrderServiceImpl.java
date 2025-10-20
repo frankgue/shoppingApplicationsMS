@@ -32,7 +32,7 @@ import java.util.UUID;
 @Transactional
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
-    private final WebClient webClient;
+    private final WebClient.Builder webClientBuilder;
 
     @Override
     public void placeOrder(OrderRequest orderRequest) {
@@ -47,13 +47,23 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
 
         // Call Inventory Service, and place order if product is in stock
-        List<InventoryResponse> inventoryResponseArray = webClient.get()
-                .uri("http://localhost:8082/api/inventory",
+        List<InventoryResponse> inventoryResponseArray = webClientBuilder.build().get()
+                .uri("http://INVENTORY-SERVICE/api/inventory",
                         uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes.toArray()).build())
                 .retrieve()
                 .bodyToFlux(InventoryResponse.class)
                 .collectList()
                 .block();
+
+
+      /*  // Call Inventory Service, and place order if product is in stock
+        List<InventoryResponse> inventoryResponseArray = webClient.get()
+                .uri("http://INVENTORY-SERVICE/api/inventory",
+                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes.toArray()).build())
+                .retrieve()
+                .bodyToFlux(InventoryResponse.class)
+                .collectList()
+                .block();*/
 
         boolean allProductsInStock = inventoryResponseArray.stream().allMatch(InventoryResponse::isInStock);
 
