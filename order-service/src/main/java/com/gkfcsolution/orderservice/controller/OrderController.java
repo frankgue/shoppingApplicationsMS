@@ -2,6 +2,7 @@ package com.gkfcsolution.orderservice.controller;
 
 import com.gkfcsolution.orderservice.dto.OrderRequest;
 import com.gkfcsolution.orderservice.service.OrderService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,9 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
     private final OrderService orderService;
     @PostMapping
+    @CircuitBreaker(name = "inventory", fallbackMethod = "fallbackMethod")
     public String placeOrder(@RequestBody OrderRequest orderRequest) {
         orderService.placeOrder(orderRequest);
         log.info("Order Placed Successfully");
         return "Order Placed Successfully";
+    }
+
+    public String fallbackMethod(OrderRequest orderRequest, RuntimeException runtimeException){
+        return "Oops! Somthing went wrong, please order after some time!";
     }
 }
