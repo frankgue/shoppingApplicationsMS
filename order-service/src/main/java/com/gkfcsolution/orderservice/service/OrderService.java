@@ -12,5 +12,5 @@ import com.gkfcsolution.orderservice.dto.OrderRequest;
  * @time 10:57
  */
 public interface OrderService {
-    void placeOrder(OrderRequest orderRequest);
+    String  placeOrder(OrderRequest orderRequest);
 }

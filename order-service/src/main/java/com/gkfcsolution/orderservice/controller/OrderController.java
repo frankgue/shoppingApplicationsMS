@@ -3,12 +3,15 @@ package com.gkfcsolution.orderservice.controller;
 import com.gkfcsolution.orderservice.dto.OrderRequest;
 import com.gkfcsolution.orderservice.service.OrderService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Created on 2025 at 10:51
@@ -27,13 +30,21 @@ public class OrderController {
     private final OrderService orderService;
     @PostMapping
     @CircuitBreaker(name = "inventory", fallbackMethod = "fallbackMethod")
-    public String placeOrder(@RequestBody OrderRequest orderRequest) {
+    @TimeLimiter(name = "inventory")
+    public CompletableFuture<String> placeOrder(@RequestBody OrderRequest orderRequest) {
+        return CompletableFuture.supplyAsync(() -> orderService.placeOrder(orderRequest));
+    }
+  /*  public String placeOrder(@RequestBody OrderRequest orderRequest) {
         orderService.placeOrder(orderRequest);
         log.info("Order Placed Successfully");
         return "Order Placed Successfully";
-    }
+    }*/
 
-    public String fallbackMethod(OrderRequest orderRequest, RuntimeException runtimeException){
+    /*public String fallbackMethod(OrderRequest orderRequest, RuntimeException runtimeException){
         return "Oops! Somthing went wrong, please order after some time!";
+    }*/
+
+    public CompletableFuture<String> fallbackMethod(OrderRequest orderRequest, RuntimeException runtimeException){
+        return CompletableFuture.supplyAsync(() -> "Oops! Somthing went wrong, please order after some time!");
     }
 }
