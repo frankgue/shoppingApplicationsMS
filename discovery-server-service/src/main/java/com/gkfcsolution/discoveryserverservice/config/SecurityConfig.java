@@ -33,10 +33,10 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Value("${eureka.username}")
+/*    @Value("${eureka.username}")
     private String username;
     @Value("${eureka.password}")
-    private String password;
+    private String password;*/
 
     @Bean
     public PasswordEncoder passwordEncoder(){
@@ -46,31 +46,32 @@ public class SecurityConfig {
     @Bean
     public InMemoryUserDetailsManager configureAuthentication() {
         List<UserDetails> userDetails = new ArrayList<>();
-        List<GrantedAuthority> employeeRoles = new ArrayList<>();
+//        List<GrantedAuthority> employeeRoles = new ArrayList<>();
         List<GrantedAuthority> adminRoles = new ArrayList<>();
         List<GrantedAuthority> userRoles = new ArrayList<>();
-        employeeRoles.add(new SimpleGrantedAuthority("EMPLOYEE"));
+//        employeeRoles.add(new SimpleGrantedAuthority("EMPLOYEE"));
         adminRoles.add(new SimpleGrantedAuthority("ADMIN"));
         userRoles.add(new SimpleGrantedAuthority("USER"));
 
-        userDetails.add(new User(username, password, employeeRoles));
+        userDetails.add(new User("eureka", "123456", userRoles));
+//        userDetails.add(new User(username, password, userRoles));
 //        userDetails.add(new User("admin", passwordEncoder().encode("123456"), adminRoles));
 //        userDetails.add(new User("user", passwordEncoder().encode("123456"), userRoles));
 
-        return new InMemoryUserDetailsManager();
+        return new InMemoryUserDetailsManager(userDetails);
     }
 
-    @Bean
+  /*  @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
-    }
+    }*/
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/eureka/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults());
