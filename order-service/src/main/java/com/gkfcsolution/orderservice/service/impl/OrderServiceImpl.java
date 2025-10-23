@@ -1,5 +1,7 @@
 package com.gkfcsolution.orderservice.service.impl;
 
+import brave.Span;
+import brave.Tracer;
 import com.gkfcsolution.orderservice.dto.InventoryResponse;
 import com.gkfcsolution.orderservice.dto.OrderLineItemsDto;
 import com.gkfcsolution.orderservice.dto.OrderRequest;
@@ -9,6 +11,7 @@ import com.gkfcsolution.orderservice.repository.OrderRepository;
 import com.gkfcsolution.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -33,6 +36,8 @@ import java.util.UUID;
 public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final WebClient.Builder webClientBuilder;
+    private final Tracer tracer;
+    private final KafkaTemplate kafkaTemplate;
 
     @Override
     public String placeOrder(OrderRequest orderRequest) {
@@ -46,14 +51,19 @@ public class OrderServiceImpl implements OrderService {
                 .map(OrderLineItems::getSkuCode)
                 .toList();
 
-        // Call Inventory Service, and place order if product is in stock
-        List<InventoryResponse> inventoryResponseArray = webClientBuilder.build().get()
-                .uri("http://inventory-service/api/inventory",
-                        uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes.toArray()).build())
-                .retrieve()
-                .bodyToFlux(InventoryResponse.class)
-                .collectList()
-                .block();
+        Span inventoryServiceLookup = tracer.nextSpan().name("InventoryServiceLookup");
+
+        try (Tracer.SpanInScope spanInScope = tracer.withSpanInScope(inventoryServiceLookup.start())) {
+            // Call Inventory Service, and place order if product is in stock
+            List<InventoryResponse> inventoryResponseArray = webClientBuilder.build().get()
+                    .uri("http://inventory-service/api/inventory",
+                            uriBuilder -> uriBuilder.queryParam("skuCode", skuCodes.toArray()).build())
+                    .retrieve()
+                    .bodyToFlux(InventoryResponse.class)
+                    .collectList()
+                    .block();
+
+
 
 
       /*  // Call Inventory Service, and place order if product is in stock
@@ -65,14 +75,18 @@ public class OrderServiceImpl implements OrderService {
                 .collectList()
                 .block();*/
 
-        boolean allProductsInStock = inventoryResponseArray.stream().allMatch(InventoryResponse::isInStock);
+            boolean allProductsInStock = inventoryResponseArray.stream().allMatch(InventoryResponse::isInStock);
 
-        if (allProductsInStock) {
-            log.info("Order Placed Successfully");
-            orderRepository.save(order);
-            return "Order Placed Successfully";
-        } else {
-            throw new IllegalArgumentException("Product is not in stock, please try again later");
+            if (allProductsInStock) {
+                log.info("Order Placed Successfully");
+                orderRepository.save(order);
+                kafkaTemplate.send("notificationTopic", order.getOrderNumber());
+                return "Order Placed Successfully";
+            } else {
+                throw new IllegalArgumentException("Product is not in stock, please try again later");
+            }
+        } finally {
+            inventoryServiceLookup.finish();
         }
     }
 
