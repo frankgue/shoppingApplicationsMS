@@ -1,4 +1,4 @@
-package com.gkfcsolution.orderservice.event;
+package com.gkfcsolution.notificationservice.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

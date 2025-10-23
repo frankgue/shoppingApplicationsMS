@@ -7,6 +7,7 @@ import com.gkfcsolution.orderservice.dto.OrderLineItemsDto;
 import com.gkfcsolution.orderservice.dto.OrderRequest;
 import com.gkfcsolution.orderservice.entity.Order;
 import com.gkfcsolution.orderservice.entity.OrderLineItems;
+import com.gkfcsolution.orderservice.event.OrderPlaceEvent;
 import com.gkfcsolution.orderservice.repository.OrderRepository;
 import com.gkfcsolution.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final WebClient.Builder webClientBuilder;
     private final Tracer tracer;
-    private final KafkaTemplate kafkaTemplate;
+    private final KafkaTemplate<String, OrderPlaceEvent> kafkaTemplate;
 
     @Override
     public String placeOrder(OrderRequest orderRequest) {
@@ -80,7 +81,9 @@ public class OrderServiceImpl implements OrderService {
             if (allProductsInStock) {
                 log.info("Order Placed Successfully");
                 orderRepository.save(order);
-                kafkaTemplate.send("notificationTopic", order.getOrderNumber());
+                kafkaTemplate.send("notificationTopic", OrderPlaceEvent.builder()
+                                .orderNumber(order.getOrderNumber())
+                        .build());
                 return "Order Placed Successfully";
             } else {
                 throw new IllegalArgumentException("Product is not in stock, please try again later");
